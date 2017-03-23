@@ -11,7 +11,7 @@ Use a Node backend with Passport and Express to show a user's coder friends.
 
 * [passport-github2] (https://github.com/cfsghost/passport-github)
 * [Github API Docs] (https://developer.github.com/v3/)
-* [node-github] (https://github.com/mikedeboer/node-github)
+* [axios] (https://github.com/mzabriskie/axios)
 
 ## Step 1: Create Skeleton of Angular App
 
@@ -39,7 +39,7 @@ The home route will display the current user's GitHub friends via the home.html 
 
 This route will display a friend's information as well as what they're currently working on.
 
-Create the server.js file and set it up to serve your static files.
+Create the `index.js` file and set it up to serve your static files.
 
 ## Step 2: Create the auth endpoints
 
@@ -48,7 +48,7 @@ Create the server.js file and set it up to serve your static files.
   * express-session
   * passport
   * passport-github2
-* [Create a Github app](https://github.com/settings/applications) and then set up the Github Strategy in your server.js with your associated `clientID` and `clientSecret`. Use a callbackURL that will redirect the user to `/auth/github/callback`
+* [Create a Github app](https://github.com/settings/applications) and then set up the Github Strategy in your `index.js` with your associated `clientID` and `clientSecret`. Use a callbackURL that will redirect the user to `/auth/github/callback`
 * Make sure you use the session, passport.initialize and passport.session middelware
 * Set up your auth endpoints:
 
@@ -62,21 +62,17 @@ Use passport.authenticate and upon successful auth, send the user to `/#/home`
 
 ## Step 3: Github following Endpoint
 
-Let's link the Angular Github service to our server.js
+Let's link the Angular Github service to our `index.js`
 
 #### GET `/api/github/following`
 
-In server.js, create the above endpoint and have it return the users that the currently logged in user follows. To do this, you will need to make an API call directly from your server.js file. You can one of two ways:
-- Use an http request using the [request](https://www.npmjs.com/package/request#http-authentication) module. The url you will need to hit is
-```
-https://api.github.com/user/followers
-```
-Make sure that you authenticate the request with the logged in user's credentials.
+In `index.js`, create a `/api/github/following` endpoint and have it return the users that the currently logged in user follows. To do this, you will need to make an API call directly from your `index.js` file. Do do this we will are going to use a package called [axios](https://github.com/mzabriskie/axios) which makes it easy to send requests from our server.
 
-- Or use the npm module [node-github](https://github.com/mikedeboer/node-github). The example on the page provides the needed information for your request.
+* With the username of the user currently logged in, use `axios` to send a request to  
+  `https://api.github.com/users/`<username>`/followers`
 
-Some hints:
-* You'll want to make sure that whichever client that requests this endpoint is currently logged in. The best way to do this would be to write a middleware function that runs before the "get followers" logic so that you're sure that the current requesting user is logged in. Your middleware function could look like this:
+#### Require Auth With Middleware
+* Let's make sure that whichever client that requests this endpoint is currently logged in. The best way to do this would be to write a middleware function that runs before the "get followers" logic so that you're sure that the current requesting user is logged in. Your middleware function could look like this:
 
 ```
 var requireAuth = function(req, res, next) {
@@ -87,7 +83,10 @@ var requireAuth = function(req, res, next) {
 }
 ```
 
-If the client gets a status of 403, it will know that it needs to redirect the user to the `/` page so the user can log in again. **Keep in mind, this will happen every time your server restarts.**
+* Add this new middleware function to your route
+```
+app.get('/api/github/following', requireAuth, __your_other_fn_here__)
+```
 
 ## Step 4: homeCtrl + Github Service
 
@@ -99,7 +98,9 @@ Now let's connect your Angular app to this setup.
 
 ## Step 5: NG un-authed auto-redirect
 
-We need a way for Angular to detect an un-authed web request (403) so we can redirect them back to the login page. We can do that by injecting a service that acts as an interceptor in Angular's httpProvider. It works sort of like middleware in Node. Add this chunk of code to your `app.js` file.
+Earlier we created a middleware function that responsed with a 403 if a user was not authorized. Let's make our angular app watch for a 403 status on every response and, when a response does have a 403 status, redirect our browser to our login page.
+
+We can do that by injecting a service that acts as an interceptor in Angular's $httpProvider. Add this chunk of code to your `app.js` file:
 
 ```
 app.config(function($httpProvider) {
@@ -128,18 +129,9 @@ Make it so that when the user clicks on one of the selected friends, it loads in
 
 #### GET /api/github/:username/activity
 
-Create this endpoint in your server.js that grabs data for the given username.
-- If you are using the `request` module from Step 3, the url you will need to hit is:
-```
-https://api.github.com/users/<username>/events
-```
-This request does not need to be authenticated with any credentials.
-
-- Or, if you are using the `node-github` module from Step 3, you will need to use
-```
-github.activity.getEventsForUser
-```
-
+Create this endpoint in your `index.js` that grabs data for the given username.
+* Using `axios` send a request to:  
+  `https://api.github.com/users/`<username>`/events`
 * Create a method in your Github service called `getFriendActivity` and make sure it's passed a username
 * Have `eventData` be a resolved variable in the app's routing, then render each of the events in the `/friend/:github_username` route in `friend.html`.
 
