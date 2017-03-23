@@ -69,7 +69,7 @@ Let's link the Angular Github service to our `index.js`
 In `index.js`, create a `/api/github/following` endpoint and have it return the users that the currently logged in user follows. To do this, you will need to make an API call directly from your `index.js` file. Do do this we will are going to use a package called [axios](https://github.com/mzabriskie/axios) which makes it easy to send requests from our server.
 
 * With the username of the user currently logged in, use `axios` to send a request to  
-  `https://api.github.com/users/`<username>`/followers`
+  `https://api.github.com/users/`username`/followers`
 
 #### Require Auth With Middleware
 * Let's make sure that whichever client that requests this endpoint is currently logged in. The best way to do this would be to write a middleware function that runs before the "get followers" logic so that you're sure that the current requesting user is logged in. Your middleware function could look like this:
@@ -131,7 +131,7 @@ Make it so that when the user clicks on one of the selected friends, it loads in
 
 Create this endpoint in your `index.js` that grabs data for the given username.
 * Using `axios` send a request to:  
-  `https://api.github.com/users/`<username>`/events`
+  `https://api.github.com/users/`username`/events`
 * Create a method in your Github service called `getFriendActivity` and make sure it's passed a username
 * Have `eventData` be a resolved variable in the app's routing, then render each of the events in the `/friend/:github_username` route in `friend.html`.
 
